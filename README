@@ -1,36 +1,34 @@
-== LazyMethods
+== AsyncMethods
 
-So your Rails application is successful beyond your wildest dreams and now your meager servers are straining under the load. You figure you'll add some caching to your views and all will be well again. Unfortunately, your controller actions load up all sorts of instance variables with records from the database. The caching won't do you much good if your database is still getting slammed. You could move your query logic to the views behind the caching layer, but that just feels icky. Besides, that will break all your tests and you really don't feel like fixing them.
+For those times you application is bound on I/O...
 
-== Enter LazyMethods.
+== Enter AsyncMethods.
 
-This plugin adds a virtual lazy version of every method on every class. Lazy methods have the same name as the original method name but prefixed with "lazy_". A lazy method will return a proxy object that looks and acts just like the result from calling the actual method. The trick is that the actual method will not be called until a method is invoked on the proxy object. This way you can continue to set up the business logic in your controller and have it only actually executed only as needed.
+This plugin adds a virtual asynchronous version of every method on every class. Asynchronouse methods have the same name as the original method name but prefixed with "async_". An asynchronous method will invoke to original method in a new thread and immediately return a proxy object that looks and acts just like the result from calling the actual method. When this proxy object is accessed for the first time, it will only then wait for the thread executing the method to finish.
 
 If you add fragment caching to your views and the cache returns a value and bypasses your view code, the method will never be invoked. Thanks to the magic of Ruby the proxy object will even act like the class it is proxying in class to class and kind_of?
 
 A simple example:
 
-The normal way to do it (at least according to every tutorial):
+The normal way to do it:
 
   def index
-	  @records = MyRecord.find(:all, :conditions => {:name => params[:name]})
+    @record_1 = MyResource.load(:first, :conditions => {:name => params[:name_1]})
+    @record_2 = MyResource.load(:first, :conditions => {:name => params[:name_2]})
+    @record_3 = MyResource.load(:first, :conditions => {:name => params[:name_3]})
   end
 
-And in the view:
+If the calls to load the resource each takes an average of 0.1 seconds, loading all three will take 0.3 seconds. In a web application this can start adding up quickly, especially under a heavy load. However, by using asynchronous methods like this, all three calls will happen in parallel and they should all complete in 0.1 seconds.
 
-	<% cache(params[:names]) -%>
-		<% @records.each do |record| -%>
-			<div><%=record.title%></div>
-		<% end -%>
-	<% end -%>
+  def index
+    @record_1 = MyResource.async_load(:first, :conditions => {:name => params[:name_1]})
+    @record_2 = MyResource.async_load(:first, :conditions => {:name => params[:name_2]})
+    @record_3 = MyResource.async_load(:first, :conditions => {:name => params[:name_3]})
+  end
 
-Now even if you cache the fragments in your view that use @records, the database will still be hit to select and instantiate all the records. You could remove the code from the action and simple add it back into the view. However, this just feels wrong and is inherently harder to test. Instead just use a lazy method.
+== Be Careful
 
-	def index
-		@records = MyRecord.lazy_find(:all, :conditions => {:name => params[:name]})
-	end
-
-Now, as long as no methods are invoked on @records, the original find method will never be called. As soon as the first method is called, the original find method will be called. It will never be called more than once. You can even pass in a block to the lazy method.
+Because underneath it all new threads are being spawned, you must be careful to make sure that the code you are calling is thread safe. For example, the default configuration for ActiveRecord is not thread safe so loading several calls from the database at once would cause you problems. This plugin was originally written to speed up parallel loads of ActiveResource records, so that should be safe to do.
 
 == Testing
 
