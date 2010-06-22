@@ -21,7 +21,7 @@ class AsyncMethods::Tester
   end
   
   def method_missing (method, *args, &block)
-    if method.to_s.starts_with?('find_')
+    if method.to_s[0, 5] == 'find_'
       yield if block_given?
       "FINDER"
     else

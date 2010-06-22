@@ -1,43 +1,46 @@
 require 'rubygems'
 require 'rake'
 require 'rake/rdoctask'
-require 'rake/gempackagetask'
-require 'spec/rake/spectask'
 
 desc 'Default: run unit tests.'
 task :default => :test
 
-desc 'Test the async_methods plugin.'
-Spec::Rake::SpecTask.new(:test) do |t|
-  t.spec_files = 'spec/**/*_spec.rb'
+begin
+  require 'spec/rake/spectask'
+  desc 'Test the gem.'
+  Spec::Rake::SpecTask.new(:test) do |t|
+    t.spec_files = FileList.new('spec/**/*_spec.rb')
+  end
+rescue LoadError
+  tast :test do
+    STDERR.puts "You must have rspec >= 1.3.0 to run the tests"
+  end
 end
 
-desc 'Generate documentation for the async_methods plugin.'
+desc 'Generate documentation for the gem.'
 Rake::RDocTask.new(:rdoc) do |rdoc|
   rdoc.rdoc_dir = 'rdoc'
-  rdoc.options << '--title' << 'asyncMethods' << '--line-numbers' << '--inline-source' << '--main' << 'README'
-  rdoc.rdoc_files.include('README')
+  rdoc.options << '--title' << 'Async Methods' << '--line-numbers' << '--inline-source' << '--main' << 'README.rdoc'
+  rdoc.rdoc_files.include('README.rdoc')
   rdoc.rdoc_files.include('lib/**/*.rb')
 end
 
-spec = Gem::Specification.new do |s| 
-  s.name = "async_methods"
-  s.version = "1.0.0"
-  s.author = "Brian Durand"
-  s.platform = Gem::Platform::RUBY
-  s.summary = "Provide asynchronous method calls for all methods on every object to aid in throughput on I/O bound processes."
-  s.files = FileList["lib/**/*", "MIT-LICENSE", 'Rakefile'].to_a
-  s.require_path = "lib"
-  s.test_files = FileList["{spec}/**/*.rb"].to_a
-  s.has_rdoc = true
-  s.rdoc_options << '--title' << 'AsyncMethods' << '--line-numbers' << '--inline-source' << '--main' << 'README'
-  s.extra_rdoc_files = ["README"]
-  s.homepage = "http://asyncmethods.rubyforge.org"
-  s.rubyforge_project = "asyncmethods"
-  s.email = 'brian@embellishedvisions.com'
-end
- 
-Rake::GemPackageTask.new(spec) do |pkg| 
-  pkg.need_tar = true 
+begin
+  require 'jeweler'
+  Jeweler::Tasks.new do |gem|
+    gem.name = "async_methods"
+    gem.summary = %Q{Gem that adds asynchronous method calls for all methods on every object to aid in throughput on I/O bound processes.}
+    gem.description = %Q(Gem that adds asynchronous method calls for all methods on every object to aid in throughput on I/O bound processes. This is intended to improve throughput on I/O bound processes like making several HTTP calls in row.)
+    gem.email = "brian@embellishedvisions.com"
+    gem.homepage = "http://github.com/bdurand/acts_as_revisionable"
+    gem.authors = ["Brian Durand"]
+    gem.rdoc_options = ["--charset=UTF-8", "--main", "README.rdoc"]
+    
+    gem.add_development_dependency('rspec', '>= 1.3.0')
+    gem.add_development_dependency('jeweler')
+  end
+
+  Jeweler::GemcutterTasks.new
+rescue LoadError
 end
 

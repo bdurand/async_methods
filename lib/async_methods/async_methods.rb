@@ -76,13 +76,14 @@ module AsyncMethods
     
     # Get the result of the original method call. The original method will only be called once.
     def __proxy_result__
-      @thread.join if @thread.alive?
+      @thread.join if @thread && @thread.alive?
+      @thread = nil
       raise @proxy_exception if @proxy_exception
       return @proxy_result
     end
     
     def __proxy_loaded__
-      !@thread.alive?
+      !(@thread && @thread.alive?)
     end
     
     # All missing methods are proxied to the original result object.
