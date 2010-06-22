@@ -16,8 +16,12 @@ Gem::Specification.new do |s|
     "README.rdoc"
   ]
   s.files = [
-    "MIT-LICENSE",
+    ".gitignore",
+     "MIT-LICENSE",
+     "README.rdoc",
      "Rakefile",
+     "VERSION",
+     "async_methods.gemspec",
      "lib/async_methods.rb",
      "lib/async_methods/async_methods.rb",
      "spec/async_method_spec.rb",
