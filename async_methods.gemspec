@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = %q{async_methods}
-  s.version = "1.0.0"
+  s.version = "1.0.1"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Brian Durand"]
-  s.date = %q{2010-06-22}
+  s.date = %q{2010-06-24}
   s.description = %q{Gem that adds asynchronous method calls for all methods on every object to aid in throughput on I/O bound processes. This is intended to improve throughput on I/O bound processes like making several HTTP calls in row.}
   s.email = %q{brian@embellishedvisions.com}
   s.extra_rdoc_files = [
