@@ -11,14 +11,15 @@ module AsyncMethods
     
     # Override missing method to add the async method handling
     def method_missing_with_async (method, *args, &block)
-      if method.to_s[0, 6] == 'async_'
+      method = method.to_s
+      if method[0, 6] == 'async_'
         method = method.to_s
-        return Proxy.new(self, method[6 , method.length].to_sym, args, &block)
+        return Proxy.new(self, method[6 , method.length], args, &block)
       else
         # Keep track of the current missing method calls to keep out of an infinite loop
         stack = Thread.current[:async_method_missing_methods] ||= []
         sig = MethodSignature.new(self, method)
-        raise NoMethodError.new("undefined method `#{method}' for #{self}") if stack.include?(sig)
+        raise NoMethodError.new("undefined method `#{method}' for #{self.inspect}") if stack.include?(sig)
         begin
           stack.push(sig)
           return method_missing_without_async(method, *args, &block)
@@ -53,12 +54,12 @@ module AsyncMethods
   # The proxy object does all the heavy lifting.
   class Proxy
     # These methods we don't want to override. All other existing methods will be redefined.
-    PROTECTED_METHODS = %w(initialize __proxy_result__ __proxy_loaded__ method_missing)
+    PROTECTED_METHODS = %w(initialize __proxy_result__ __proxy_loaded__ method_missing __send__ object_id)
     
     def initialize (obj, method, args = [], &block)
       # Override already defined methods on Object to proxy them to the result object
       methods.each do |m|
-        eval "def self.#{m} (*args, &block); __proxy_result__.send(:#{m}, *args, &block); end" unless PROTECTED_METHODS.include?(m)
+        eval "def self.#{m} (*args, &block); __proxy_result__.send(:#{m}, *args, &block); end" unless PROTECTED_METHODS.include?(m.to_s)
       end
       
       @thread = Thread.new do
