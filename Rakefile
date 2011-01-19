@@ -6,14 +6,13 @@ desc 'Default: run unit tests.'
 task :default => :test
 
 begin
-  require 'spec/rake/spectask'
-  desc 'Test the gem.'
-  Spec::Rake::SpecTask.new(:test) do |t|
-    t.spec_files = FileList.new('spec/**/*_spec.rb')
-  end
+  require 'rspec'
+  require 'rspec/core/rake_task'
+  desc 'Run the unit tests'
+  RSpec::Core::RakeTask.new(:test)
 rescue LoadError
-  tast :test do
-    STDERR.puts "You must have rspec >= 1.3.0 to run the tests"
+  task :test do
+    STDERR.puts "You must have rspec 2.0 installed to run the tests"
   end
 end
 
@@ -32,11 +31,11 @@ begin
     gem.summary = %Q{Gem that adds asynchronous method calls for all methods on every object to aid in throughput on I/O bound processes.}
     gem.description = %Q(Gem that adds asynchronous method calls for all methods on every object to aid in throughput on I/O bound processes. This is intended to improve throughput on I/O bound processes like making several HTTP calls in row.)
     gem.email = "brian@embellishedvisions.com"
-    gem.homepage = "http://github.com/bdurand/acts_as_revisionable"
+    gem.homepage = "http://github.com/bdurand/async_methods"
     gem.authors = ["Brian Durand"]
     gem.rdoc_options = ["--charset=UTF-8", "--main", "README.rdoc"]
     
-    gem.add_development_dependency('rspec', '>= 1.3.0')
+    gem.add_development_dependency('rspec', '>= 2.0.0')
     gem.add_development_dependency('jeweler')
   end
 
