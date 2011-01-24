@@ -24,6 +24,16 @@ describe AsyncMethods::InstanceMethods do
     proxy.__proxy_loaded__.should == true
   end
   
+  it "should remove itself from stacktraces thrown in method_missing" do
+    begin
+      "object".call_a_missing_method_that_does_not_exist
+      raise "should not get here"
+    rescue => e
+      async_source_file = File.expand_path("../../lib/async_methods/async_methods.rb", __FILE__)
+      File.exist?(async_source_file).should == true
+      e.backtrace.join("\n").should_not include(async_source_file)
+    end
+  end
 end
 
 describe AsyncMethods::Proxy do
@@ -97,6 +107,17 @@ describe AsyncMethods::Proxy do
     object.async_real_method_called.should == false
     object.async_real_method
     object.async_real_method_called.should == true
+  end
+  
+  it "should not open a new thread if Thread.critical is true" do
+    begin
+      Thread.critical = true
+      Thread.should_not_receive(:new)
+      proxy = "xxx".async_to_s
+      proxy.should == "xxx"
+    ensure
+      Thread.critical = false
+    end
   end
   
 end

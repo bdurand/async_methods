@@ -14,7 +14,12 @@ module AsyncMethods
       method = method.to_s
       if method[0, 6] == 'async_'
         method = method.to_s
-        return Proxy.new(self, method[6 , method.length], args, &block)
+        called_method = method[6 , method.length]
+        if Thread.critical
+          return send(called_method, *args, &block)
+        else
+          return Proxy.new(self, called_method, args, &block)
+        end
       else
         # Keep track of the current missing method calls to keep out of an infinite loop
         stack = Thread.current[:async_method_missing_methods] ||= []
@@ -23,6 +28,10 @@ module AsyncMethods
         begin
           stack.push(sig)
           return method_missing_without_async(method, *args, &block)
+        rescue Exception => e
+          # Strip this method from the stack trace as it adds confusion
+          e.backtrace.reject!{|line| line.include?(__FILE__)}
+          raise e
         ensure
           stack.pop
         end
@@ -46,7 +55,7 @@ module AsyncMethods
     end
     
     def eql? (sig)
-      sig.kind_of(MethodSignature) and sig.object == @object and sig.method == @method
+      sig.kind_of(MethodSignature) && sig.object == @object && sig.method == @method
     end
     
   end
@@ -54,22 +63,24 @@ module AsyncMethods
   # The proxy object does all the heavy lifting.
   class Proxy
     # These methods we don't want to override. All other existing methods will be redefined.
-    PROTECTED_METHODS = %w(initialize __proxy_result__ __proxy_loaded__ method_missing __send__ object_id)
+    PROTECTED_METHODS = %w(initialize method_missing __proxy_result__ __proxy_loaded__ __send__ __id__ object_id)
+    
+    # Override already defined methods on Object to proxy them to the result object
+    instance_methods.each do |m|
+      undef_method(m) unless PROTECTED_METHODS.include?(m.to_s)
+    end
     
     def initialize (obj, method, args = [], &block)
-      # Override already defined methods on Object to proxy them to the result object
-      methods.each do |m|
-        eval "def self.#{m} (*args, &block); __proxy_result__.send(:#{m}, *args, &block); end" unless PROTECTED_METHODS.include?(m.to_s)
-      end
-      
+      @proxy_result = nil
+      @proxy_exception = nil
       @thread = Thread.new do
         begin
-          if obj and method
+          if obj && method
             @proxy_result = obj.send(method, *args, &block)
           else
             @proxy_result = block.call
           end
-        rescue Object => e
+        rescue Exception => e
           @proxy_exception = e
         end
       end
