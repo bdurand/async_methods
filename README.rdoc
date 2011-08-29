@@ -1,5 +1,7 @@
 == AsyncMethods
 
+Note: This gem is no longer being maintained. The functionality has been rolled into the lazy_methods gem (https://rubygems.org/gems/lazy_methods).
+
 For those times you application is bound on I/O...
 
 == Enter AsyncMethods.
